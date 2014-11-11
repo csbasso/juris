@@ -1,0 +1,11 @@
+body {
+  padding-top: 70px;
+}
+
+.situacao_OK{
+	color: green;
+	font-weight: bold;
+}
+.situacao_bad{
+	color:red;
+}

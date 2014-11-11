@@ -1,0 +1,115 @@
+{% extends "contiva/base.html" %}
+
+{% block titulo %}Início{% endblock %}
+
+{% block extra_js %}
+
+  function atualiza_lista_empresas() {
+    $("#tabela_empresas_tbody tr").remove();
+    $.getJSON('{% url 'empresa_lista_ajax' %}', function(data) {
+      $.each(data, function(index) {
+            $("#tabela_empresas").append("<tr><td><a href='empresa_detalha/"+index+"'>"+ data[index].nome_empresarial +"</a></td><td><span class='"+ detect_situation(data[index].numero) +"'></span></td><td><span class='"+ detect_situation(10) +"'></span></td><td><a href='#'><span class='glyphicon glyphicon-trash' onclick='chamar_deleta_empresa( \""+ index +"\", \""+ data[index].nome_empresarial +"\" );' ></span></a></td></tr>");
+            console.log(data[index].nome_empresarial);
+      });
+    });
+  }
+
+  $('#adicionar_empresa').on('click', function(evt) {
+
+    evt.preventDefault();
+
+    $('#adicionar_empresa').disabled = true
+
+    $.ajax({
+        type: 'POST',
+        url: '{% url 'empresa_adiciona_ajax' %}',
+        data: { 
+            'cnpj': $('#numero_cnpj').val(),
+            'csrfmiddlewaretoken':'{{csrf_token}}'  
+        },
+        success: function(data, textStatus, jqXHR){
+          if (data.mensagem) {
+            alertify.success(data.mensagem);
+            $('#numero_cnpj').val('');    
+            $('#adicionar_empresa').disabled = false        
+            atualiza_lista_empresas();
+          } else {            
+            alertify.error(data.erro);
+          }
+        },
+        error: function (jqXHR, textStatus, errorThrown){
+            alertify.error("Ocorreu um erro inesperado ao processarmos sua solicitação.");
+        }
+        
+    });
+
+  });
+
+  $(function() {
+      $.ajaxSetup({ cache: false });
+      atualiza_lista_empresas();
+  });
+
+{% endblock %}
+
+{% block conteudo %}
+
+    <div class="row">
+        <div class="col-sm-4">
+          <div class="panel panel-danger">
+            <div class="panel-heading">
+              <h3 class="panel-title">Alertas</h3>
+            </div>
+            <div class="panel-body">
+                Nenhum alerta.
+            </div>
+          </div>
+
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h3 class="panel-title">Adicionar Empresa</h3>
+            </div>
+            <div class="panel-body">
+              <form class="form-horizontal" role="form" method="POST" action="#">
+                {% csrf_token %}
+                <div class="form-group">
+                    <div class="col-lg-12">
+                      <input type="input" class="form-control" id="numero_cnpj" name="numero_cnpj" placeholder="CNPJ">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="col-lg-offset-4 col-lg-12">
+                      <button type="submit" id="adicionar_empresa" class="btn btn-default">Adicionar</button>
+                    </div>
+                  </div>
+                </form>
+            </div>
+          </div>
+
+        </div><!-- /.col-sm-4 -->
+        
+        <div class="col-sm-8">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h3 class="panel-title">Processos</h3>
+            </div>
+            <div class="panel-body" style="height:300px; overflow:auto">
+              <table class="table table-hover" id="tabela_empresas">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Ultima atualizacao</th>
+                    <th>Situacao</th>
+                    <th>Deletar?</th>
+                  </tr>
+                </thead>
+                <tbody id="tabela_empresas_tbody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div><!-- /.col-sm-4 -->
+    </div>
+
+
+{% endblock %}
