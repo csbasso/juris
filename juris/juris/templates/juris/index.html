@@ -4,6 +4,23 @@
 
 {% block extra_js %}
 
+function atualiza_lista_processos() {    
+    $.getJSON('{% url 'busca_todos_processos' %}', function(data) {
+      $.each(data, function(index) {
+            $("#container_processos").append("<li class='list-group-item'>"  + data[index].numero + " <span class='badge'>" + data[index].origem + "</span> </li>");
+            //<li class="list-group-item"> " + data[index].numero +" </li>
+            console.log(data[index].origem);
+      });
+    });
+  }
+
+  $(document).ready(function() {
+      $.ajaxSetup({ cache: false });      
+      atualiza_lista_processos();
+  });
+
+
+
 {% endblock %}
 
 {% block conteudo %}
@@ -15,7 +32,7 @@
               <h3 class="panel-title">Adicionar processo</h3>
             </div>
             <div class="panel-body">
-              <form class="form-horizontal" role="form" method="POST" action="{% url 'busca_proc' %}">
+              <form class="form-horizontal" role="form" method="POST" action="">              
                 {% csrf_token %}
                 <div class="form-group">
                     <div class="col-lg-8">
@@ -45,55 +62,14 @@
         <div class="col-sm-8">
           <div class="panel panel-default">
             <div class="panel-heading">
-              <h3 class="panel-title">Processos</h3>
+              <h3 class="panel-title">Meus Processos</h3>              
             </div>
-
             <div class="row">
-              <div class="col-md-9">
-                <h4> &nbsp;{{proc}} </h4>
-                <dl class="dl-horizontal">
-                  <dt>Org&atilde;o Julgador: </dt>
-                  <dd>{{julgador}}</dd>                  
-                  <dt>Justi&ccedil;a Gratuita: </dt>
-                  <dd>{{gratuita}}</dd>
-                  <dt>Assuntos: </dt>
-                  <dd>  
-                    <br>
-                    <ul>
-                      {% for assunto in assuntos_list %}
-                        <li>{{ assunto }} </li>
-                      {% endfor %}
-                    </ul>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-
-            <div class="panel-body" style="height:500px; overflow:auto">
-              <table class="table table-hover" id="tabela_processos">
-                <thead>
-                  <tr>                    
-                    <th>Data</th>
-                    <th>Situa&ccedil;&atilde;o</th>                    
-                  </tr>
-                </thead>
-                <tbody id="tabela_processos_tbody">
-                  {% for data, txt in fases_list %}
-                  <tr>                    
-                    <td>
-                        {{data}}                        
-                    </td>
-                    <td>
-                        {{txt}}
-                    </td>    
-                    {% empty %} 
-                          Nenhum resultado encontrado.                
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
+              <div class='col-lg-12'>
+               <ul class="list-group" id="container_processos">
+               </ul>
+             </div>
+            </div>                        
         </div><!-- /.col-sm-4 -->
     </div>
 {% endblock %}

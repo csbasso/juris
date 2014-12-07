@@ -24,7 +24,7 @@ from process.models import Processo, Assunto, Situacao
 
 
 def index(request):
-	return render(request, 'index.html')
+	return render(request, 'juris/index.html')
 
 def mock_data(request):
 	return render(request, 'juris/tj.html')
@@ -116,10 +116,7 @@ def busca_proc_web(numero, origem, hash_proc):
 			#@TODO: usar datetime retorna um naive date - runtime warning, devo usar o django.utils timezone
 			situacao.data = datetime.datetime.strptime(text.getText(), "%d/%m/%Y %H:%M")
 			situacao.situacao = unicode(text.next_sibling)
-			situacao.save()
-
-
-		print "Saindo do metodo - busca_proc_web"
+			situacao.save()		
 	
 def busca_dados_jfrs(nro_processo, origem):
 	url_jfrs = "http://www.jfrs.jus.br/processos/acompanhamento/resultado_pesquisa.php?selForma=NU&todasfases=S&txtValor="+nro_processo+"&selOrigem="+origem+""
@@ -130,6 +127,7 @@ def busca_dados_jfrs(nro_processo, origem):
 	return soup
 
 #@TODO: Double check nisso aqui...
+#@TODO: Hoje o model soh suporta uma origem de busca - adicionar um campo para saber daonde veio TJ/TRT/TF
 @csrf_exempt
 def adiciona_processo(request):
 	response_dict = {}
@@ -180,14 +178,14 @@ def adiciona_processo(request):
 	add_never_cache_headers(resp)
 	return resp
 
-def busca_processo(request, processo):
+def busca_processo(request, processo_nro):
 	processo_json = []
 	assuntos_list = []
 	situacoes_list = []
 	
 	try:
 		if request.method == 'GET':
-			hash_proc = processo			
+			hash_proc = processo_nro			
 			processo = get_object_or_404(Processo, numero__exact=hash_proc)
 			assuntos = Assunto.objects.filter(proc_id = processo)
 			situacoes = Situacao.objects.filter(proc_id = processo)
@@ -206,17 +204,18 @@ def busca_processo(request, processo):
 	add_never_cache_headers(resp)
 	return resp
 
-def busca_processos(request, proc_list):
-	processos_json = []
-
+def busca_todos_processos(request):
+	processo_json = []
 	try:
-	   processos = Processo.objects.filter(numero__in = proc_list)
-	   processos_json = dict((e.id_md5, {'nome_empresarial': e.nome_empresarial, 'debitoFGTS': e.debitos_fgts,
-										 'debitoRFB': e.debitos_rfbccd, 'debitoSeFaz': e.debitos_sefaz_rs}) for e in empresas)
+		if request.method == 'GET':
+			processos_list = Processo.objects.all()
+			
+			processos_json = dict((e.id_md5, {'numero': e.numero, 'status': e.status,'origem': e.origem, 
+				'orgao_julgador': e.orgao_julgador, 'justica_gratuita': e.justica_gratuita }) for e in processos_list);
 	except ObjectDoesNotExist:
-	   processos = None
+		processos = None
 
-	resp = HttpResponse(json.dumps(processo_json), content_type="application/json")
+	resp = HttpResponse(json.dumps(processos_json), content_type="application/json")
 	add_never_cache_headers(resp)
 	return resp
 
@@ -237,6 +236,9 @@ def deleta_processo(request, processo):
 	resp = HttpResponse(json.dumps(return_json), content_type="application/json", status=status)
 	add_never_cache_headers(resp)
 	return resp
+
+
+
 
 #poderia usarmos um decorator para verificar o device,
 # def registra_dispositivo(request, dispositivo, nome):
